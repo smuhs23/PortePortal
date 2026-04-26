@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1B2D5E">
+<link rel="manifest" href="manifest.json">
+<title>TiefbauPorte v6 · Vor-Ort-Check</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="app.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  .porte-bar{background:#0E1832;color:#fff;padding:8px 16px;font:500 13px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:9999}
+  .porte-bar a{color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:color .15s}
+  .porte-bar a:hover{color:#78B51A}
+  .porte-bar a svg{width:14px;height:14px}
+  .porte-bar .right{opacity:.65;font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+  @media (max-width: 540px){.porte-bar .right{display:none}}
+</style>
+</head>
+<body>
+
+<div class="porte-bar">
+  <a href="../../index.html" aria-label="Zurück zum PortePortal">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    PortePortal
+  </a>
+  <span class="right">TiefbauPorte v6 · LIS-Planer</span>
+</div>
+
+<header class="topbar">
+  <div class="brand">
+    <img class="logo" src="../../assets/logo-tiefbauporte.png" alt="TiefbauPorte" style="object-fit:contain;background:#fff;padding:1px;" />
+    <h1>TiefbauPorte<small id="hdrSub">Vor-Ort-Check · Union E</small></h1>
+  </div>
+  <div class="modetoggle">
+    <button id="btnModeEdit" class="active" data-mode="edit">✎ Bearbeiten</button>
+    <button id="btnModeView" data-mode="view">👁 Ansicht</button>
+  </div>
+  <button id="btnBOM" class="hdr-btn" title="Material-Bestellliste über alle Trassen">📋 BOM</button>
+  <div class="sum" id="sumTotal">0,00 €</div>
+</header>
+
+<div id="map">
+  <div class="searchbar">
+    <input id="srchInput" type="text" placeholder="Adresse suchen...">
+    <button id="srchBtn">🔍</button>
+    <button id="btnUndo" class="snap" title="Rückgängig (Strg+Z)" disabled>↶</button>
+    <button id="btnRedo" class="snap" title="Wiederholen (Strg+Shift+Z)" disabled>↷</button>
+    <button id="snapBtn" class="snap" title="Kartenausschnitt speichern">📸</button>
+  </div>
+  <div class="searchres" id="srchRes"></div>
+
+  <div class="layerctl">
+    <div class="title">Karte</div>
+    <div class="lrow">
+      <button id="lyrMap" class="active">Straße</button>
+      <button id="lyrSat">Sat</button>
+    </div>
+    <div class="sep"></div>
+    <div class="title">Sichtbar</div>
+    <div class="lrow">
+      <button id="lyrHW" class="active">📍 HW</button>
+      <button id="lyrTR" class="active">🚧 TR</button>
+    </div>
+    <div class="lrow">
+      <button id="lyrLinks" title="Alle Asset↔Trassen-Verbindungen anzeigen">↗ Verbindungen</button>
+    </div>
+    <div class="sep"></div>
+    <div class="title">Größe</div>
+    <div class="lrow">
+      <button id="lyrBigPins" title="Marker größer / kleiner schalten">🔍 Große Marker</button>
+    </div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+  <div class="sel-badge" id="selBadge"></div>
+  <div class="info" id="infoBanner"></div>
+</div>
+
+<div class="modebar">
+  <button id="btnModePin" class="active">📍 Objekt setzen</button>
+  <button id="btnModeTrace" class="trace">🚧 Trasse zeichnen</button>
+  <button id="btnModeDrag" class="edit">✋ Verschieben</button>
+  <button id="btnLocate">🎯 GPS</button>
+</div>
+
+<div class="toolbar">
+  <button id="btnCatalog">📋 Katalog</button>
+  <button id="btnKalk">💰 Kalkulation</button>
+  <button class="sec" id="btnMeta">📝 Projekt</button>
+  <button class="sec" id="btnExport">📤 Export</button>
+</div>
+
+<!-- Modals (werden zur Laufzeit gefüllt) -->
+<div class="modal" id="modalCatalog"><div class="sheet"></div></div>
+<div class="modal" id="modalAddCat"><div class="sheet"></div></div>
+<div class="modal" id="modalObj"><div class="sheet"></div></div>
+<div class="modal" id="modalObjInfo"><div class="sheet"></div></div>
+<div class="modal" id="modalTrace"><div class="sheet"></div></div>
+<div class="modal" id="modalSeg"><div class="sheet"></div></div>
+<div class="modal" id="modalKalk"><div class="sheet"></div></div>
+<div class="modal" id="modalMeta"><div class="sheet"></div></div>
+<div class="modal" id="modalExport"><div class="sheet"></div></div>
+<div class="modal" id="modalCableTypes"><div class="sheet"></div></div>
+<div class="modal" id="modalAddCable"><div class="sheet"></div></div>
+<div class="modal" id="modalEmojiPicker"><div class="sheet"></div></div>
+<div class="modal" id="modalPickCable"><div class="sheet"></div></div>
+<div class="modal" id="modalBOM"><div class="sheet"></div></div>
+
+<script>
+  // v6.4.3 SELBSTHEILUNG: alte Service-Worker und Caches einer früheren Version entsorgen.
+  // Läuft VOR app.js und blockiert via async/await + sofortiger Reload bei gefundenem alten SW.
+  // Wird einmal pro Browser persistent gemerkt (localStorage), dann nicht mehr.
+  (async function() {
+    try {
+      if (!('serviceWorker' in navigator)) return;
+      if (localStorage.getItem('tbp_sw_purged_v643')) return;
+      const regs = await navigator.serviceWorker.getRegistrations();
+      if (!regs || regs.length === 0) {
+        localStorage.setItem('tbp_sw_purged_v643', '1');
+        return;
+      }
+      console.warn('[v6.4.3] Alte Service-Worker entdeckt, entsorge Caches…', regs.length);
+      for (const r of regs) { try { await r.unregister(); } catch(_) {} }
+      if (window.caches) {
+        const keys = await caches.keys();
+        for (const k of keys) { try { await caches.delete(k); } catch(_) {} }
+      }
+      localStorage.setItem('tbp_sw_purged_v643', '1');
+      // Hard reload, damit alle Module direkt vom Netz kommen
+      location.reload();
+    } catch (e) {
+      console.warn('[v6.4.3] SW-Cleanup-Fehler:', e);
+    }
+  })();
+</script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
