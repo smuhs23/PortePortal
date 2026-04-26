@@ -1,0 +1,1139 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#1B2D5E" />
+<meta name="description" content="PortePortal — Genius Toolset für Planung und Kalkulation im Tiefbau. TiefbauPorte, KalkuPorte und AushubPorte in einem Portal." />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="PortePortal" />
+<meta name="mobile-web-app-capable" content="yes" />
+
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/png" href="assets/logo-porteportal.png" />
+<link rel="apple-touch-icon" href="assets/logo-porteportal.png" />
+
+<title>PortePortal — Genius Toolset Tiefbau</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" />
+
+<style>
+  :root{
+    --navy:#1B2D5E;
+    --navy-700:#162548;
+    --navy-900:#0E1832;
+    --lime:#78B51A;
+    --lime-600:#6AA013;
+    --lime-soft:rgba(120,181,26,.12);
+    --ink:#1A1A1A;
+    --bg:#F4F4F4;
+    --white:#FFFFFF;
+    --line:#E3E6EC;
+    --muted:#5C6478;
+    --shadow-sm: 0 1px 2px rgba(14,24,50,.06), 0 2px 6px rgba(14,24,50,.05);
+    --shadow-md: 0 6px 18px rgba(14,24,50,.08), 0 2px 6px rgba(14,24,50,.06);
+    --shadow-lg: 0 24px 48px rgba(14,24,50,.14), 0 6px 14px rgba(14,24,50,.08);
+    --shadow-xl: 0 40px 80px rgba(14,24,50,.18), 0 10px 24px rgba(14,24,50,.10);
+    --r-sm:8px; --r-md:14px; --r-lg:22px; --r-xl:28px; --r-2xl:36px;
+    --container: 1240px;
+    --t-fast: .15s cubic-bezier(.4,0,.2,1);
+    --t-base: .25s cubic-bezier(.4,0,.2,1);
+    --t-slow: .45s cubic-bezier(.4,0,.2,1);
+  }
+
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    color:var(--ink);
+    background:var(--bg);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+  img{max-width:100%;display:block}
+  a{color:inherit;text-decoration:none}
+  button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+
+  h1,h2,h3,h4{
+    font-family:'Sora','Inter',system-ui,sans-serif;
+    color:var(--navy);
+    letter-spacing:-0.015em;
+    text-wrap:balance;
+    margin:0;
+    line-height:1.1;
+  }
+  p{text-wrap:pretty}
+  .accent{color:var(--lime)}
+
+  .container{
+    width:min(100% - 40px, var(--container));
+    margin-inline:auto;
+  }
+
+  /* ==========================================================
+     KICKER — small label above headings
+  =========================================================== */
+  .kicker{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:'Sora';font-size:12px;font-weight:600;
+    color:var(--lime-600);letter-spacing:.14em;text-transform:uppercase;
+    margin-bottom:14px;
+  }
+  .kicker::before{
+    content:""; width:22px; height:2px; background:var(--lime);
+    border-radius:2px;
+  }
+
+  /* ==========================================================
+     BUTTONS
+  =========================================================== */
+  .btn{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:14px 22px; border-radius:999px;
+    font-family:'Sora';font-weight:600; font-size:15px;
+    transition:transform var(--t-fast), box-shadow var(--t-fast), background var(--t-fast);
+    white-space:nowrap;
+  }
+  .btn svg{width:16px;height:16px;flex-shrink:0}
+  .btn--primary{background:var(--navy); color:#fff !important; box-shadow:var(--shadow-sm)}
+  .btn--primary:hover{background:var(--navy-700);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+  .btn--lime{background:var(--lime); color:var(--navy) !important; box-shadow:var(--shadow-sm)}
+  .btn--lime:hover{background:var(--lime-600);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+  .btn--ghost{background:#fff; color:var(--navy) !important; border:1px solid var(--line)}
+  .btn--ghost:hover{border-color:var(--navy);transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+
+  /* ==========================================================
+     NAV
+  =========================================================== */
+  .nav{
+    position:sticky; top:0; z-index:50;
+    backdrop-filter:saturate(180%) blur(14px);
+    -webkit-backdrop-filter:saturate(180%) blur(14px);
+    background:rgba(244,244,244,.78);
+    border-bottom:1px solid transparent;
+    transition:border-color var(--t-base), background var(--t-base);
+  }
+  .nav.is-scrolled{ border-bottom-color:var(--line); background:rgba(244,244,244,.94); }
+  .nav__inner{
+    display:flex; align-items:center; justify-content:space-between;
+    height:72px;
+  }
+  .brand{display:flex;align-items:center;gap:12px;font-family:'Sora';font-weight:700;color:var(--navy);font-size:18px;letter-spacing:-.01em}
+  .brand img{width:38px;height:38px;border-radius:10px;box-shadow:var(--shadow-sm);background:#fff}
+  .brand__name :nth-child(1){color:var(--navy)}
+  .brand__name :nth-child(2){color:var(--lime)}
+  .nav__links{display:flex;align-items:center;gap:4px}
+  .nav__links a{
+    padding:10px 14px; border-radius:10px; font-weight:500; font-size:14.5px;
+    color:var(--ink); opacity:.78;
+    transition:all var(--t-fast);
+  }
+  .nav__links a:hover{opacity:1;background:rgba(27,45,94,.06)}
+  .nav__cta{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:10px 16px;border-radius:999px;
+    background:var(--navy); color:#fff !important; font-weight:600; font-size:14px;
+    box-shadow:var(--shadow-sm);
+    transition:all var(--t-fast);
+    margin-left:8px;
+  }
+  .nav__cta:hover{background:var(--navy-700);transform:translateY(-1px);box-shadow:var(--shadow-md)}
+  .nav__cta svg{width:14px;height:14px}
+  .nav__burger{
+    display:none;width:42px;height:42px;border-radius:10px;
+    align-items:center;justify-content:center;
+    background:#fff;border:1px solid var(--line);
+    transition:all var(--t-fast);
+  }
+  .nav__burger:hover{border-color:var(--navy)}
+  .nav__burger svg{width:20px;height:20px;color:var(--navy)}
+  @media (max-width: 880px){
+    .nav__links, .nav__cta{display:none}
+    .nav__burger{display:inline-flex}
+  }
+
+  /* Mobile drawer */
+  .drawer{
+    position:fixed;inset:0;z-index:60;
+    background:rgba(14,24,50,.5);
+    backdrop-filter:blur(8px);
+    opacity:0;pointer-events:none;
+    transition:opacity var(--t-base);
+  }
+  .drawer.is-open{opacity:1;pointer-events:auto}
+  .drawer__panel{
+    position:absolute;top:0;right:0;bottom:0;
+    width:min(86vw, 360px);background:#fff;
+    padding:24px;display:flex;flex-direction:column;gap:6px;
+    transform:translateX(100%);
+    transition:transform var(--t-base);
+  }
+  .drawer.is-open .drawer__panel{transform:translateX(0)}
+  .drawer__head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .drawer__close{
+    width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    background:var(--bg);
+  }
+  .drawer__close svg{width:20px;height:20px;color:var(--navy)}
+  .drawer a{
+    padding:14px 16px;border-radius:12px;font-weight:600;color:var(--navy);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .drawer a:hover{background:var(--bg)}
+  .drawer a svg{width:14px;height:14px;opacity:.4}
+
+  /* ==========================================================
+     HERO
+  =========================================================== */
+  .hero{
+    position:relative; overflow:hidden;
+    background:
+      radial-gradient(1200px 600px at 88% -10%, rgba(120,181,26,.12), transparent 60%),
+      radial-gradient(1000px 700px at -10% 110%, rgba(27,45,94,.10), transparent 55%),
+      linear-gradient(180deg, var(--bg), #fff 60%);
+    border-bottom:1px solid var(--line);
+  }
+  .hero__grid-bg{
+    position:absolute; inset:0; pointer-events:none; opacity:.45;
+    background-image:
+      linear-gradient(rgba(27,45,94,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(27,45,94,.06) 1px, transparent 1px);
+    background-size:48px 48px;
+    mask-image:radial-gradient(ellipse 80% 60% at 50% 30%, #000 40%, transparent 80%);
+    -webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 30%, #000 40%, transparent 80%);
+  }
+  .hero__inner{
+    position:relative;
+    display:grid;
+    grid-template-columns: 1.1fr .9fr;
+    gap:60px;
+    align-items:center;
+    padding: 88px 0 100px;
+  }
+  @media (max-width: 980px){
+    .hero__inner{
+      grid-template-columns:1fr;
+      gap:48px;
+      padding:60px 0 72px;
+    }
+  }
+
+  .hero__badge{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:8px 14px;border-radius:999px;
+    background:#fff;border:1px solid var(--line);
+    font-size:13px;font-weight:600;color:var(--navy);
+    box-shadow:var(--shadow-sm);
+    margin-bottom:24px;
+  }
+  .hero__badge .dot{
+    width:8px;height:8px;border-radius:50%;background:var(--lime);
+    box-shadow:0 0 0 4px rgba(120,181,26,.18);
+  }
+
+  .hero h1{
+    font-size: clamp(40px, 6.4vw, 76px);
+    font-weight:800;
+    margin-bottom:22px;
+  }
+  .hero h1 .stack{display:block}
+  .hero__lede{
+    font-size:clamp(17px, 1.5vw, 19px);
+    color:var(--muted);
+    max-width: 56ch;
+    margin-bottom:32px;
+  }
+  .hero__actions{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:36px}
+  .hero__meta{
+    display:flex;flex-wrap:wrap;gap:24px 32px;
+    color:var(--muted);font-size:14px;font-weight:500;
+  }
+  .hero__meta div{display:flex;align-items:center;gap:8px}
+  .hero__meta svg{width:16px;height:16px;color:var(--lime)}
+
+  /* Hero visual — stacked logo + cross-section card */
+  .hero__visual{
+    position:relative;
+    width:100%;
+    max-width:520px;
+    margin-inline:auto;
+    aspect-ratio: 1 / 1.05;
+    min-height:380px;
+  }
+  .hero__halo{
+    position:absolute;inset:-8%;
+    background: radial-gradient(closest-side, rgba(120,181,26,.18), transparent 70%);
+    filter:blur(24px);
+    z-index:0;
+  }
+  .hero__logo-wrap{
+    position:absolute;
+    top:0; left:50%; transform:translateX(-50%);
+    width:74%;
+    z-index:2;
+  }
+  .hero__logo-wrap img{
+    width:100%;height:auto;display:block;
+    filter: drop-shadow(0 30px 50px rgba(14,24,50,.18));
+    animation: float 6s ease-in-out infinite;
+  }
+  @keyframes float{
+    0%,100%{ transform:translateY(0) }
+    50%   { transform:translateY(-8px) }
+  }
+  .hero__chip{
+    position:absolute;z-index:3;
+    background:#fff;border-radius:14px;
+    box-shadow:var(--shadow-md);
+    padding:12px 14px;
+    display:flex;align-items:center;gap:10px;
+    font-family:'Sora';font-weight:600;font-size:13px;color:var(--navy);
+    border:1px solid var(--line);
+  }
+  .hero__chip svg{width:18px;height:18px;color:var(--lime);flex-shrink:0}
+  .hero__chip--1{top:14%;left:-2%}
+  .hero__chip--2{top:46%;right:-4%}
+  .hero__chip--3{bottom:8%;left:6%}
+
+  @media (max-width: 980px){
+    .hero__visual{max-width:400px}
+    .hero__chip--1, .hero__chip--3{display:none}
+  }
+  @media (max-width: 540px){
+    .hero__chip{display:none}
+  }
+
+  /* ==========================================================
+     SECTION HEAD
+  =========================================================== */
+  .section-head{
+    display:grid;
+    grid-template-columns: 1fr .9fr;
+    gap:48px;
+    align-items:end;
+    margin-bottom:56px;
+  }
+  @media (max-width: 880px){
+    .section-head{grid-template-columns:1fr;gap:18px;margin-bottom:40px}
+  }
+  .section-head h2{font-size:clamp(30px, 3.6vw, 46px); font-weight:700}
+  .section-head p{color:var(--muted);font-size:17px;max-width:50ch}
+
+  /* ==========================================================
+     TOOLS — Cards
+  =========================================================== */
+  .tools{padding:96px 0; background:#fff; position:relative;}
+  .tools__grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:24px;
+  }
+  @media (max-width: 1080px){.tools__grid{grid-template-columns:repeat(2, 1fr)}}
+  @media (max-width: 720px){.tools__grid{grid-template-columns:1fr}}
+
+  .tool{
+    position:relative;
+    background:linear-gradient(180deg, #fff, #FAFBFC);
+    border:1px solid var(--line);
+    border-radius:var(--r-xl);
+    padding:28px;
+    display:flex;flex-direction:column;
+    transition: transform var(--t-base), box-shadow var(--t-base), border-color var(--t-base);
+    overflow:hidden;
+  }
+  .tool::before{
+    content:""; position:absolute; inset:-1px;
+    border-radius:inherit; padding:1px;
+    background: linear-gradient(135deg, rgba(120,181,26,.0), rgba(120,181,26,.4) 50%, rgba(120,181,26,.0));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude;
+    opacity:0; transition:opacity var(--t-base);
+    pointer-events:none;
+  }
+  .tool:hover{
+    transform:translateY(-6px);
+    box-shadow:var(--shadow-lg);
+    border-color:transparent;
+  }
+  .tool:hover::before{opacity:1}
+
+  .tool__head{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:20px;
+  }
+  .tool__pill{
+    display:inline-flex;align-items:center;gap:6px;
+    font-family:'Sora';font-size:11px;font-weight:600;
+    padding:5px 10px;border-radius:999px;letter-spacing:.04em;
+    background:rgba(27,45,94,.08); color:var(--navy);
+  }
+  .tool__pill .dot{width:6px;height:6px;border-radius:50%;background:var(--lime)}
+  .tool__pill--featured{background:var(--navy);color:#fff}
+  .tool__pill--featured .dot{background:var(--lime);box-shadow:0 0 0 3px rgba(120,181,26,.3)}
+  .tool__meta{font-size:12px;font-weight:600;color:var(--muted);font-family:'Sora'}
+
+  .tool__visual{
+    position:relative;
+    aspect-ratio: 1 / 1;
+    margin: 4px -8px 18px;
+    border-radius:var(--r-lg);
+    background:
+      radial-gradient(closest-side, rgba(120,181,26,.12), transparent 70%),
+      linear-gradient(180deg, #F8FAFC, #fff);
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+  }
+  .tool__visual::before{
+    content:"";position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(27,45,94,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(27,45,94,.04) 1px, transparent 1px);
+    background-size:24px 24px;
+    mask-image:radial-gradient(ellipse 70% 60% at 50% 50%, #000, transparent);
+    -webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 50%, #000, transparent);
+  }
+  .tool__visual img{
+    position:relative;
+    width:78%;height:auto;
+    filter: drop-shadow(0 16px 24px rgba(14,24,50,.16));
+    transition:transform var(--t-base);
+  }
+  .tool:hover .tool__visual img{ transform: scale(1.04) }
+
+  .tool__name{
+    font-size:26px;font-weight:700;
+    margin-bottom:10px;
+  }
+  .tool__desc{
+    color:var(--muted);font-size:15px;
+    margin:0 0 18px;
+    min-height:3em;
+  }
+  .tool__features{
+    list-style:none;padding:0;margin:0 0 22px;
+    display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;
+  }
+  .tool__features li{
+    display:flex;align-items:center;gap:8px;
+    font-size:13.5px;font-weight:500;color:var(--ink);
+  }
+  .tool__features svg{
+    width:14px;height:14px;color:var(--lime);flex-shrink:0;
+    background:var(--lime-soft);border-radius:50%;padding:3px;
+  }
+
+  .tool__foot{
+    margin-top:auto;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;padding-top:16px;border-top:1px solid var(--line);
+  }
+  .tool__cta{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:10px 16px;border-radius:999px;
+    background:var(--navy); color:#fff !important;
+    font-family:'Sora';font-weight:600;font-size:14px;
+    transition:all var(--t-fast);
+  }
+  .tool__cta svg{width:14px;height:14px;transition:transform var(--t-fast)}
+  .tool__cta:hover{background:var(--navy-700)}
+  .tool__cta:hover svg{transform:translateX(3px)}
+  .tool__cta--lime{background:var(--lime); color:var(--navy) !important}
+  .tool__cta--lime:hover{background:var(--lime-600)}
+
+  /* ==========================================================
+     WHY
+  =========================================================== */
+  .why{
+    padding:96px 0;
+    background:linear-gradient(180deg, #fff, var(--bg));
+    border-top:1px solid var(--line);
+  }
+  .features{
+    display:grid;grid-template-columns:repeat(4, 1fr);gap:20px;
+  }
+  @media (max-width: 980px){.features{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width: 540px){.features{grid-template-columns:1fr}}
+
+  .feature{
+    background:#fff;border:1px solid var(--line);
+    border-radius:var(--r-lg);padding:26px;
+    transition: transform var(--t-base), box-shadow var(--t-base);
+  }
+  .feature:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
+  .feature__ico{
+    width:48px;height:48px;border-radius:12px;
+    background:linear-gradient(135deg, var(--lime-soft), rgba(27,45,94,.06));
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:18px;
+  }
+  .feature__ico svg{width:24px;height:24px;color:var(--navy)}
+  .feature h3{font-size:18px;font-weight:700;margin-bottom:8px}
+  .feature p{color:var(--muted);font-size:14.5px;margin:0}
+
+  /* ==========================================================
+     SHOWCASE V6
+  =========================================================== */
+  .showcase{
+    padding:96px 0;
+    background: linear-gradient(180deg, var(--bg) 0%, #fff 80%);
+    overflow:hidden;
+    position:relative;
+  }
+  .showcase__inner{
+    display:grid;grid-template-columns: 1fr 1.05fr;gap:60px;
+    align-items:center;
+  }
+  @media (max-width: 980px){.showcase__inner{grid-template-columns:1fr;gap:48px}}
+
+  .showcase h2{font-size:clamp(30px, 3.6vw, 46px);font-weight:700;margin-bottom:18px}
+  .showcase .lede{color:var(--muted);font-size:17px;margin-bottom:30px;max-width:52ch}
+  .showcase__list{
+    list-style:none;padding:0;margin:0 0 36px;
+    display:grid;gap:18px;
+  }
+  .showcase__list li{
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:14px;align-items:start;
+  }
+  .showcase__list .num{
+    width:34px;height:34px;border-radius:10px;
+    background:var(--navy);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Sora';font-weight:700;font-size:14px;
+    flex-shrink:0;
+  }
+  .showcase__list b{
+    display:block;color:var(--navy);font-family:'Sora';font-weight:700;
+    font-size:16px;margin-bottom:2px;
+  }
+  .showcase__list span{color:var(--muted);font-size:14.5px}
+
+  /* The Tool-Mock Card */
+  .showcase-card{
+    position:relative;
+    border-radius:var(--r-2xl);
+    background: linear-gradient(150deg, #fff, #F1F4F9);
+    border:1px solid var(--line);
+    box-shadow: var(--shadow-xl);
+    padding:8px;
+    transform: rotate(-1.2deg);
+    transition: transform var(--t-base);
+  }
+  .showcase-card:hover{transform: rotate(0deg)}
+  .showcase-card__inner{
+    background:#fff;
+    border-radius:calc(var(--r-2xl) - 8px);
+    padding:22px;
+    display:flex;flex-direction:column;gap:18px;
+  }
+  .sc-toolbar{
+    display:flex;align-items:center;gap:12px;
+    padding-bottom:14px;border-bottom:1px solid var(--line);
+  }
+  .sc-toolbar img{width:36px;height:36px;border-radius:8px;background:#fff}
+  .sc-toolbar h4{
+    font-family:'Sora';font-size:18px;font-weight:700;
+    flex:1;
+  }
+  .sc-toolbar h4 .accent{color:var(--lime)}
+  .sc-toolbar .v6{
+    font-family:'Sora';font-size:11px;font-weight:700;
+    color:var(--lime);background:var(--lime-soft);
+    padding:4px 10px;border-radius:999px;letter-spacing:.06em;
+  }
+  .sc-row{
+    display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;
+  }
+  .sc-stat{
+    background:linear-gradient(180deg, #F8FAFC, #fff);
+    border:1px solid var(--line);
+    border-radius:12px;padding:14px;
+    text-align:center;
+  }
+  .sc-stat span{
+    display:block;font-size:11px;font-weight:600;
+    color:var(--muted);text-transform:uppercase;letter-spacing:.08em;
+    margin-bottom:6px;
+  }
+  .sc-stat b{
+    font-family:'Sora';font-size:22px;font-weight:700;color:var(--navy);
+    display:block;
+  }
+  .sc-stat b small{font-size:13px;font-weight:500;color:var(--muted)}
+  .sc-trench{
+    background:linear-gradient(180deg, #F8FAFC, #EEF2F7);
+    border-radius:14px;
+    padding:14px;
+    overflow:hidden;
+  }
+  .sc-trench svg{width:100%;height:auto;display:block}
+
+  /* ==========================================================
+     CTA
+  =========================================================== */
+  .cta{
+    padding:96px 0;
+    background:linear-gradient(135deg, var(--navy) 0%, var(--navy-900) 100%);
+    color:#fff;
+    position:relative;overflow:hidden;
+  }
+  .cta::before{
+    content:"";position:absolute;inset:0;
+    background-image:
+      radial-gradient(800px 300px at 90% 110%, rgba(120,181,26,.20), transparent 60%),
+      radial-gradient(600px 200px at 0% 0%, rgba(120,181,26,.10), transparent 60%);
+  }
+  .cta::after{
+    content:"";position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+    background-size:48px 48px;
+    mask-image:linear-gradient(180deg, transparent 30%, #000 100%);
+    -webkit-mask-image:linear-gradient(180deg, transparent 30%, #000 100%);
+  }
+  .cta__inner{
+    position:relative;z-index:1;
+    display:grid;grid-template-columns:1.2fr .8fr;gap:48px;
+    align-items:center;
+  }
+  @media (max-width: 880px){.cta__inner{grid-template-columns:1fr;gap:32px}}
+  .cta .kicker{color:var(--lime)}
+  .cta .kicker::before{background:var(--lime)}
+  .cta h2{
+    color:#fff;font-size:clamp(28px, 3.4vw, 42px);font-weight:700;margin-bottom:14px;
+  }
+  .cta p{color:rgba(255,255,255,.78);font-size:16.5px;margin:0 0 28px;max-width:54ch}
+  .cta__actions{display:flex;flex-wrap:wrap;gap:12px}
+  .cta__visual{
+    text-align:center;
+  }
+  .cta__visual img{
+    width:min(260px, 80%);height:auto;margin-inline:auto;
+    filter: drop-shadow(0 30px 50px rgba(0,0,0,.35));
+  }
+
+  /* ==========================================================
+     FOOTER
+  =========================================================== */
+  .footer{
+    background:var(--navy-900);
+    color:rgba(255,255,255,.7);
+    padding:48px 0 28px;
+    font-size:13.5px;
+  }
+  .footer__inner{
+    display:grid;
+    grid-template-columns:1.5fr 1fr 1fr 1fr;
+    gap:40px;
+    margin-bottom:32px;
+  }
+  @media (max-width: 880px){.footer__inner{grid-template-columns:1fr 1fr;gap:32px}}
+  @media (max-width: 540px){.footer__inner{grid-template-columns:1fr}}
+  .footer__brand{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .footer__brand img{width:40px;height:40px;border-radius:10px;background:#fff;padding:2px}
+  .footer__brand b{
+    font-family:'Sora';font-weight:700;font-size:18px;color:#fff;letter-spacing:-.01em;
+  }
+  .footer__brand b .accent{color:var(--lime)}
+  .footer p{margin:0 0 8px}
+  .footer h4{
+    color:#fff;font-family:'Sora';font-size:13px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;
+  }
+  .footer ul{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+  .footer ul a{
+    color:rgba(255,255,255,.7);
+    transition:color var(--t-fast);
+  }
+  .footer ul a:hover{color:var(--lime)}
+  .footer__bar{
+    border-top:1px solid rgba(255,255,255,.1);
+    padding-top:20px;
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;
+    color:rgba(255,255,255,.5);font-size:12.5px;
+  }
+
+  /* ==========================================================
+     UTILITIES
+  =========================================================== */
+  .reveal{
+    opacity:0;transform:translateY(16px);
+    transition: opacity .6s ease, transform .6s cubic-bezier(.4,0,.2,1);
+  }
+  .reveal.is-visible{opacity:1;transform:none}
+  /* Fallback: sichtbar machen falls IO/JS nicht greift */
+  .no-js .reveal,
+  html:not(.js) .reveal{opacity:1;transform:none}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{
+      animation-duration:.01ms !important;
+      transition-duration:.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================ NAV ============================ -->
+<header class="nav" id="nav">
+  <div class="container nav__inner">
+    <a href="#top" class="brand" aria-label="PortePortal Startseite">
+      <img src="assets/logo-porteportal.png" alt="" />
+      <span class="brand__name"><span>Porte</span><span>Portal</span></span>
+    </a>
+    <nav class="nav__links" aria-label="Hauptnavigation">
+      <a href="#tools">Tools</a>
+      <a href="#warum">Warum</a>
+      <a href="#tiefbau">v6 LIS-Planer</a>
+      <a href="#kontakt">Kontakt</a>
+    </nav>
+    <a href="#tools" class="nav__cta">
+      Loslegen
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+    </a>
+    <button class="nav__burger" id="burger" aria-label="Menü öffnen" aria-controls="drawer" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ============================ DRAWER (mobile) ============================ -->
+<div class="drawer" id="drawer" aria-hidden="true">
+  <div class="drawer__panel">
+    <div class="drawer__head">
+      <a href="#top" class="brand" aria-label="PortePortal">
+        <img src="assets/logo-porteportal.png" alt="" />
+        <span class="brand__name"><span>Porte</span><span>Portal</span></span>
+      </a>
+      <button class="drawer__close" id="drawer-close" aria-label="Menü schließen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <a href="#tools" data-close>Tools <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a href="#warum" data-close>Warum <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a href="#tiefbau" data-close>v6 LIS-Planer <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></a>
+    <a href="#kontakt" data-close>Kontakt <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></a>
+  </div>
+</div>
+
+<!-- ============================ HERO ============================ -->
+<main id="top">
+<section class="hero">
+  <div class="hero__grid-bg" aria-hidden="true"></div>
+  <div class="container hero__inner">
+
+    <div class="hero__copy">
+      <span class="hero__badge"><span class="dot"></span>Genius Toolset für den Tiefbau · PWA · Offline-fähig</span>
+      <h1>
+        <span class="stack">Drei Tools.</span>
+        <span class="stack">Ein <span class="accent">Portal</span>.</span>
+        <span class="stack">Null Medienbruch.</span>
+      </h1>
+      <p class="hero__lede">
+        <b>PortePortal</b> bündelt <b>TiefbauPorte</b> (LIS- und Kabelgraben-Planer),
+        <b>KalkuPorte</b> (Schnell-Kostenkalkulator) und <b>AushubPorte</b>
+        (Aushub- &amp; Profil-Planer) in einem responsiven Portal — vom iPad-Vorarbeiter bis zum Büro-PC.
+      </p>
+      <div class="hero__actions">
+        <a href="#tools" class="btn btn--primary">
+          Tools entdecken
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+        <a href="tools/tiefbauporte/" class="btn btn--lime">
+          Direkt zu v6
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+      <div class="hero__meta">
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>iPad · PC · Handy</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>Offline (PWA)</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>Union E Stammdaten</div>
+      </div>
+    </div>
+
+    <div class="hero__visual" aria-hidden="true">
+      <div class="hero__halo"></div>
+      <div class="hero__logo-wrap">
+        <img src="assets/logo-porteportal.png" alt="PortePortal — drei Tools, ein Portal" />
+      </div>
+      <div class="hero__chip hero__chip--1">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/></svg>
+        Live-Massen
+      </div>
+      <div class="hero__chip hero__chip--2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/></svg>
+        LIS &amp; Trasse
+      </div>
+      <div class="hero__chip hero__chip--3">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13"/></svg>
+        Angebot · PDF
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================ TOOLS ============================ -->
+<section class="tools" id="tools">
+  <div class="container">
+    <div class="section-head reveal">
+      <div>
+        <span class="kicker">Das Toolset</span>
+        <h2>Drei spezialisierte Tools, ein durchgängiger <span class="accent">Workflow</span>.</h2>
+      </div>
+      <p>Jedes Tool macht eine Sache richtig gut — und sie sprechen dieselbe Sprache: Stammdaten, Profile, Aufschlagslogik aus dem Union E-Standard.</p>
+    </div>
+
+    <div class="tools__grid">
+
+      <!-- Tool 1: TiefbauPorte (Featured) -->
+      <article class="tool reveal">
+        <div class="tool__head">
+          <span class="tool__pill tool__pill--featured"><span class="dot"></span>LIS-Planer · v6</span>
+          <span class="tool__meta">FEATURED</span>
+        </div>
+        <div class="tool__visual">
+          <img src="assets/logo-tiefbauporte.png" alt="TiefbauPorte Logo" loading="lazy" />
+        </div>
+        <div class="tool__body">
+          <h3 class="tool__name">Tiefbau<span class="accent">Porte</span></h3>
+          <p class="tool__desc">Kalkulations­planer für die Errichtung von <b>Lade­infrastruktur</b> und <b>Kabel­gräben</b> — Trasse, Profil, Massen.</p>
+          <ul class="tool__features">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg>Trasse zeichnen</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg>Profil &amp; Schicht</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg>LIS-Komponenten</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg>Massen &amp; LV</li>
+          </ul>
+        </div>
+        <div class="tool__foot">
+          <a class="tool__cta tool__cta--lime" href="tools/tiefbauporte/">
+            v6 öffnen
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </a>
+          <span class="tool__meta">v6.0</span>
+        </div>
+      </article>
+
+      <!-- Tool 2: KalkuPorte -->
+      <article class="tool reveal">
+        <div class="tool__head">
+          <span class="tool__pill"><span class="dot"></span>Schnell­kalkulation</span>
+          <span class="tool__meta">Kosten</span>
+        </div>
+        <div class="tool__visual">
+          <img src="assets/logo-kalkuporte.png" alt="KalkuPorte Logo" loading="lazy" />
+        </div>
+        <div class="tool__body">
+          <h3 class="tool__name">Kalku<span class="accent">Porte</span></h3>
+          <p class="tool__desc">Schneller Kosten­kalkulator für Aufmaß-zu-Angebot in Minuten — Stunden­sätze, Material, Aufschläge.</p>
+          <ul class="tool__features">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg>Stunden­sätze</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg>Material</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg>Aufschläge</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg>Angebot PDF</li>
+          </ul>
+        </div>
+        <div class="tool__foot">
+          <a class="tool__cta" href="tools/kalkuporte/">
+            KalkuPorte öffnen
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </a>
+          <span class="tool__meta">v5.23</span>
+        </div>
+      </article>
+
+      <!-- Tool 3: AushubPorte -->
+      <article class="tool reveal">
+        <div class="tool__head">
+          <span class="tool__pill"><span class="dot"></span>Aushub &amp; Profile</span>
+          <span class="tool__meta">Mengen</span>
+        </div>
+        <div class="tool__visual">
+          <img src="assets/logo-aushubporte.png" alt="AushubPorte Logo" loading="lazy" />
+        </div>
+        <div class="tool__body">
+          <h3 class="tool__name">Aushub<span class="accent">Porte</span></h3>
+          <p class="tool__desc">Schnell­kalkulator für <b>Aushübe</b> und <b>Graben­profile</b> — Querschnitt, Volumen, Verfüllung.</p>
+          <ul class="tool__features">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg>Profil­wahl</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg>m³ &amp; t</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg>Schicht­aufbau</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg>Verfüll­plan</li>
+          </ul>
+        </div>
+        <div class="tool__foot">
+          <a class="tool__cta" href="tools/aushubporte/">
+            AushubPorte öffnen
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </a>
+          <span class="tool__meta">v1.0</span>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================ WHY ============================ -->
+<section class="why" id="warum">
+  <div class="container">
+    <div class="section-head reveal">
+      <div>
+        <span class="kicker">Warum PortePortal</span>
+        <h2>Ein Portal, das auf der <span class="accent">Baustelle</span> denkt.</h2>
+      </div>
+      <p>Gebaut für Tiefbau-Profis: groß genug für den iPad-Vorarbeiter, schnell genug für den schnellen Blick aufs Handy.</p>
+    </div>
+
+    <div class="features">
+      <div class="feature reveal">
+        <div class="feature__ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19l5-5 4 4 5-9"/><path d="M3 21h18"/></svg>
+        </div>
+        <h3>Alles in einem Workflow</h3>
+        <p>Aufmaß in AushubPorte, Kalkulation in KalkuPorte, LIS-Planung in TiefbauPorte v6 — ohne Medienbruch.</p>
+      </div>
+      <div class="feature reveal">
+        <div class="feature__ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12a7 7 0 0 1 14 0"/><path d="M3 12h2M19 12h2M12 3v2M5.6 5.6l1.4 1.4M17 7l1.4-1.4"/><path d="M9 21h6M12 17v4"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <h3>Offline-fähig (PWA)</h3>
+        <p>Volle Funktion ohne Netz im Graben. Änderungen synchronisieren sich, sobald wieder Empfang da ist.</p>
+      </div>
+      <div class="feature reveal">
+        <div class="feature__ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="10" rx="1.5"/><path d="M7 18h6M10 14v4"/><rect x="15" y="9" width="6" height="12" rx="1.5"/></svg>
+        </div>
+        <h3>iPad · PC · Handy</h3>
+        <p>Eine Codebasis, drei Bildschirme. Großzügige Touch-Targets ≥ 44 px, klare Hierarchie auf jeder Größe.</p>
+      </div>
+      <div class="feature reveal">
+        <div class="feature__ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <h3>Belastbare Zahlen</h3>
+        <p>Profile, Aufschlagslogik und LIS-Stammdaten geprüft — Angebot und Ausführung sprechen dieselbe Sprache.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ SHOWCASE V6 ============================ -->
+<section class="showcase" id="tiefbau">
+  <div class="container showcase__inner">
+    <div class="reveal">
+      <span class="kicker">Im Fokus</span>
+      <h2>TiefbauPorte <span class="accent">v6</span> — der LIS-Planer.</h2>
+      <p class="lede">Errichtung von Ladeinfrastruktur und Kabelgräben in einer Maske: Trasse zeichnen, Profile setzen, Massen automatisch — fertig zum Angebot.</p>
+      <ul class="showcase__list">
+        <li>
+          <span class="num">1</span>
+          <div><b>Trasse anlegen</b><span>Stationierung und Knoten direkt am Plan, mit Snap an Bestand.</span></div>
+        </li>
+        <li>
+          <span class="num">2</span>
+          <div><b>Profil &amp; Schichten</b><span>Grabenbreite, Tiefe, Sandbettung, Asphalt-Aufbau — als Vorlage hinterlegt.</span></div>
+        </li>
+        <li>
+          <span class="num">3</span>
+          <div><b>LIS-Komponenten</b><span>Ladesäulen, Schaltschränke, Fundamente — komplett mit Kalkulationspositionen.</span></div>
+        </li>
+        <li>
+          <span class="num">4</span>
+          <div><b>Massen &amp; Angebot</b><span>m³ Aushub, m¹ Kabel, Stk. Bauteile — exportierbar als PDF und LV.</span></div>
+        </li>
+      </ul>
+      <a href="tools/tiefbauporte/" class="btn btn--lime">
+        v6 jetzt öffnen
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+    <div class="reveal" style="--reveal-delay:.1s">
+      <div class="showcase-card">
+        <div class="showcase-card__inner">
+          <div class="sc-toolbar">
+            <img src="assets/logo-tiefbauporte.png" alt="" />
+            <h4>Tiefbau<span class="accent">Porte</span></h4>
+            <span class="v6">V6</span>
+          </div>
+          <div class="sc-row">
+            <div class="sc-stat"><span>Trasse</span><b>184 <small>m</small></b></div>
+            <div class="sc-stat"><span>Aushub</span><b>62,4 <small>m³</small></b></div>
+            <div class="sc-stat"><span>LIS</span><b>4 <small>Stk.</small></b></div>
+          </div>
+          <div class="sc-trench" aria-hidden="true">
+            <svg viewBox="0 0 400 220" preserveAspectRatio="xMidYMid meet">
+              <!-- Surface line -->
+              <line x1="0" y1="120" x2="400" y2="120" stroke="#1B2D5E" stroke-width="2" stroke-dasharray="4 4" />
+              <!-- Trench cross-section -->
+              <path d="M 60 120 L 90 200 L 310 200 L 340 120" fill="rgba(27,45,94,.06)" stroke="#1B2D5E" stroke-width="2" />
+              <!-- Sand bedding -->
+              <path d="M 95 195 L 305 195 L 305 178 L 95 178 Z" fill="rgba(120,181,26,.20)" stroke="#78B51A" stroke-width="1.5" />
+              <!-- Cables -->
+              <circle cx="160" cy="186" r="6" fill="#1B2D5E" />
+              <circle cx="200" cy="186" r="6" fill="#1B2D5E" />
+              <circle cx="240" cy="186" r="6" fill="#78B51A" />
+              <!-- LIS station -->
+              <rect x="346" y="86" width="22" height="34" fill="#1B2D5E" rx="2" />
+              <rect x="350" y="92" width="14" height="10" fill="#78B51A" rx="1" />
+              <!-- annotation -->
+              <line x1="60" y1="40" x2="340" y2="40" stroke="#78B51A" stroke-width="1.5" />
+              <line x1="60" y1="34" x2="60" y2="46" stroke="#78B51A" stroke-width="1.5" />
+              <line x1="340" y1="34" x2="340" y2="46" stroke="#78B51A" stroke-width="1.5" />
+              <text x="200" y="32" font-family="Sora, Inter" font-size="12" font-weight="700" text-anchor="middle" fill="#1B2D5E">B = 0,80 m</text>
+              <text x="358" y="80" font-family="Sora, Inter" font-size="10" font-weight="600" text-anchor="middle" fill="#1B2D5E">LIS</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ CTA ============================ -->
+<section class="cta" id="kontakt">
+  <div class="container cta__inner">
+    <div>
+      <span class="kicker">Loslegen</span>
+      <h2>Kalkulieren Sie schneller — mit dem <span class="accent">PortePortal</span> in der Tasche.</h2>
+      <p>Auf das iPad pinnen, im Browser öffnen, oder als App installieren. Funktioniert offline, synchronisiert online.</p>
+      <div class="cta__actions">
+        <a href="#tools" class="btn btn--lime">
+          Tools öffnen
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+        <a href="tools/tiefbauporte/" class="btn btn--ghost" style="background:transparent;color:#fff !important;border-color:rgba(255,255,255,.2)">
+          Direkt zu v6
+        </a>
+      </div>
+    </div>
+    <div class="cta__visual">
+      <img src="assets/logo-porteportal.png" alt="" />
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ============================ FOOTER ============================ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer__inner">
+      <div>
+        <div class="footer__brand">
+          <img src="assets/logo-porteportal.png" alt="" />
+          <b><span>Porte</span><span class="accent">Portal</span></b>
+        </div>
+        <p>Genius Toolset für Planung und Kalkulation im Tiefbau.</p>
+        <p style="opacity:.6">Ein internes Werkzeug der Union E GmbH.</p>
+      </div>
+      <div>
+        <h4>Tools</h4>
+        <ul>
+          <li><a href="tools/tiefbauporte/">TiefbauPorte v6</a></li>
+          <li><a href="tools/kalkuporte/">KalkuPorte</a></li>
+          <li><a href="tools/aushubporte/">AushubPorte</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Portal</h4>
+        <ul>
+          <li><a href="#tools">Tools</a></li>
+          <li><a href="#warum">Warum</a></li>
+          <li><a href="#tiefbau">v6 LIS-Planer</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Union E GmbH</h4>
+        <ul>
+          <li>Vinckeweg 15</li>
+          <li>47119 Duisburg</li>
+          <li><a href="mailto:info@union-e.de">info@union-e.de</a></li>
+          <li><a href="https://www.union-e.de" target="_blank" rel="noopener">www.union-e.de</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bar">
+      <span>© <span id="year">2026</span> Union E GmbH · Die HPM Mobilmacher</span>
+      <span>PortePortal · v1.0 · PWA-ready</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ============================ JS ============================ -->
+<script>
+  // Mark JS-enabled
+  document.documentElement.classList.add('js');
+
+  // Year
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Sticky nav shadow
+  const nav = document.getElementById('nav');
+  const onScroll = () => {
+    nav.classList.toggle('is-scrolled', window.scrollY > 8);
+  };
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  // Mobile drawer
+  const burger = document.getElementById('burger');
+  const drawer = document.getElementById('drawer');
+  const drawerClose = document.getElementById('drawer-close');
+  const openDrawer = () => {
+    drawer.classList.add('is-open');
+    drawer.setAttribute('aria-hidden', 'false');
+    burger.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+  };
+  const closeDrawer = () => {
+    drawer.classList.remove('is-open');
+    drawer.setAttribute('aria-hidden', 'true');
+    burger.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  };
+  burger.addEventListener('click', openDrawer);
+  drawerClose.addEventListener('click', closeDrawer);
+  drawer.addEventListener('click', (e) => { if (e.target === drawer) closeDrawer(); });
+  drawer.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', closeDrawer));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDrawer(); });
+
+  // Reveal-on-scroll
+  const revealElements = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -5% 0px' });
+    revealElements.forEach(el => io.observe(el));
+    // Fallback: nach 1.2s alle revealen, falls Observer aus Performance-Gründen nicht getriggert hat (z.B. full-page screenshots)
+    setTimeout(() => {
+      revealElements.forEach(el => el.classList.add('is-visible'));
+    }, 1200);
+  } else {
+    revealElements.forEach(el => el.classList.add('is-visible'));
+  }
+
+  // Service worker registration (PWA)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW registration failed:', err));
+    });
+  }
+</script>
+
+</body>
+</html>

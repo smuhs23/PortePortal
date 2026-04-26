@@ -1,0 +1,57 @@
+{
+  "name": "PortePortal — Genius Toolset Tiefbau",
+  "short_name": "PortePortal",
+  "description": "Genius Toolset für Planung und Kalkulation im Tiefbau. TiefbauPorte, KalkuPorte und AushubPorte in einem Portal.",
+  "lang": "de",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F4F4F4",
+  "theme_color": "#1B2D5E",
+  "icons": [
+    {
+      "src": "assets/logo-porteportal.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/logo-porteportal.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/logo-porteportal.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "TiefbauPorte v6",
+      "short_name": "Tiefbau",
+      "description": "LIS- und Kabelgraben-Planer",
+      "url": "./tools/tiefbauporte/",
+      "icons": [{ "src": "assets/logo-tiefbauporte.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "KalkuPorte",
+      "short_name": "Kalku",
+      "description": "Schnellkalkulator für Kosten",
+      "url": "./tools/kalkuporte/",
+      "icons": [{ "src": "assets/logo-kalkuporte.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "AushubPorte",
+      "short_name": "Aushub",
+      "description": "Aushub- und Profilplaner",
+      "url": "./tools/aushubporte/",
+      "icons": [{ "src": "assets/logo-aushubporte.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
+  "categories": ["productivity", "business", "utilities"]
+}
