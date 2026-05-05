@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TiefbauPorte — Tiefbau-Kalkulation</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header id="topbar">
+  <div class="brand">
+    <div class="logo">⚡</div>
+    <div>
+      <div class="bn">TiefbauPorte</div>
+      <div class="bt">Tiefbau-Kalkulation</div>
+    </div>
+  </div>
+  <button id="btnToggleLeft" class="iconbtn" title="Linke Spalte ein-/ausblenden">◧</button>
+  <div class="proj">
+    <input id="projName" placeholder="Projektname">
+    <input id="projWE" placeholder="WE-Nr." style="width:120px">
+  </div>
+  <div class="search-global">
+    <input id="globalSearch" placeholder="🔍 Standort suchen…">
+    <div id="globalSearchResults" class="search-results" hidden></div>
+  </div>
+  <div class="spacer"></div>
+  <button id="btnToggleRight" class="iconbtn" title="Rechte Spalte ein-/ausblenden">◨</button>
+  <div class="total-pill">
+    <span class="lbl">Σ Brutto</span>
+    <span id="topTotal">0 €</span>
+  </div>
+  <button id="btnUndo" class="iconbtn" title="Rückgängig (Cmd+Z)">↶</button>
+  <button id="btnRedo" class="iconbtn" title="Wiederherstellen (Cmd+Y)">↷</button>
+  <span id="saveStatus" class="save-status">💾 gespeichert</span>
+  <button id="btnExport" class="primary-btn">Export ↓</button>
+</header>
+
+<main id="layout">
+
+  <!-- LEFT: Catalog + Tree -->
+  <aside class="col col-left">
+    <div class="panel-tabs">
+      <button class="ptab active" data-pt="catalog">Katalog</button>
+      <button class="ptab" data-pt="tree">Projekt</button>
+    </div>
+
+    <div class="ppane active" data-pt="catalog">
+      <div class="cat-head">
+        <input id="catSearch" placeholder="🔍 Suchen…">
+        <button id="btnManageCatalog" title="Katalog verwalten">⚙</button>
+      </div>
+      <div id="catChips" class="chips"></div>
+      <div id="catList" class="cat-list"></div>
+    </div>
+
+    <div class="ppane" data-pt="tree">
+      <div id="treeList" class="tree-list"></div>
+    </div>
+  </aside>
+
+  <!-- CENTER: Map -->
+  <section class="col col-center">
+    <div class="map-toolbar">
+      <div class="tool-group">
+        <button class="tool active" data-tool="select" title="Auswählen">↖</button>
+        <button class="tool" data-tool="pin" title="Pin setzen (nach Asset-Auswahl)">📍</button>
+        <button class="tool" data-tool="trace" title="Trasse zeichnen">✏</button>
+        <button class="tool" id="btnGpsPlace" title="Asset an meiner GPS-Position setzen">🛰📍</button>
+      </div>
+      <div class="tool-divider"></div>
+      <div class="tool-group" id="basemapGroup">
+        <button class="tool active" data-base="osm" title="Karte">🗺</button>
+        <button class="tool" data-base="sat" title="Satellit">🛰</button>
+      </div>
+      <div class="tool-divider"></div>
+      <div class="tool-group viz">
+        <label><input type="checkbox" id="vizPins" checked> Pins</label>
+        <label><input type="checkbox" id="vizTraces" checked> Trassen</label>
+        <label><input type="checkbox" id="vizLabels"> Labels</label>
+      </div>
+      <div class="tool-divider"></div>
+      <label class="pin-size-ctl" title="Pin-Größe">
+        <span>Größe</span>
+        <input type="range" id="pinSizeSlider" min="16" max="48" step="1" value="30">
+        <span id="pinSizeVal">30</span>
+      </label>
+      <div class="spacer"></div>
+      <div id="toolHint" class="tool-hint">Asset im Katalog wählen, dann auf Karte klicken</div>
+    </div>
+    <div id="map"></div>
+    <div id="timeline" class="timeline" hidden></div>
+  </section>
+
+  <!-- RIGHT: Inspector + BOM -->
+  <aside class="col col-right">
+    <div class="panel-tabs">
+      <button class="ptab active" data-pt="inspector">Inspector</button>
+      <button class="ptab" data-pt="bom">Kalkulation</button>
+    </div>
+    <div class="ppane active" data-pt="inspector">
+      <div id="inspector" class="inspector"></div>
+    </div>
+    <div class="ppane" data-pt="bom">
+      <div id="bomPanel" class="bom-panel"></div>
+    </div>
+  </aside>
+
+</main>
+
+<div id="ctxMenu" class="ctx-menu" hidden></div>
+<div id="modalRoot"></div>
+<div id="toast" class="toast"></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
