@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Energieschema — Vorschau v2</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --ink-2: #555;
+    --ink-3: #888;
+    --line: #e6e6e6;
+    --bg: #f5f5f5;
+    --paper: #fff;
+    --blue: #00B0F0;
+    --red: #FF0000;
+    --amber: #FFC000;
+    --kvs-bg: #CCCBCA;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: var(--ink); background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1500px; margin: 0 auto; padding: 32px 40px 80px; }
+  .doc-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    border-bottom: 1px solid var(--line); padding-bottom: 10px; margin-bottom: 24px;
+  }
+  .doc-head h1 {
+    font-size: 14px; font-weight: 500; margin: 0; color: var(--ink-3);
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .doc-head .meta { font-size: 11px; color: var(--ink-3); }
+  .intro {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 4px;
+    padding: 18px 22px; margin-bottom: 24px;
+  }
+  .intro h2 { margin: 0 0 6px; font-size: 13px; font-weight: 600; }
+  .intro p { margin: 0 0 6px; font-size: 12px; color: var(--ink-2); line-height: 1.55; }
+  .intro p:last-child { margin-bottom: 0; }
+  .intro code {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 11px; background: #f0f0f0; padding: 1px 5px; border-radius: 3px;
+  }
+
+  .page {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 4px;
+    padding: 32px 40px 40px; margin-bottom: 24px; page-break-after: always;
+  }
+  .page-head { margin-bottom: 8px; }
+  .page-head .section-num {
+    font-size: 22px; font-weight: 700; color: var(--red);
+    text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px;
+    margin: 0 0 18px;
+  }
+  .page-head .schema-title {
+    font-size: 24px; font-weight: 400; color: var(--amber); margin: 0 0 6px;
+  }
+  .page-head .schema-title em {
+    font-style: italic; text-decoration: underline; text-underline-offset: 4px;
+  }
+
+  svg.schema { display: block; width: 100%; height: auto; margin-top: 12px; }
+
+  .toolbar { display: flex; gap: 8px; margin-bottom: 16px; }
+  .toolbar button {
+    padding: 8px 14px; background: var(--paper); border: 1px solid var(--line);
+    border-radius: 4px; font: inherit; font-size: 12px; cursor: pointer;
+  }
+  .toolbar button.primary { background: var(--ink); color: white; border-color: var(--ink); }
+  .toolbar button:hover { border-color: var(--ink); }
+
+  .note { font-size: 11px; color: var(--ink-3); margin-top: 8px; line-height: 1.6; }
+  .note b { color: var(--ink-2); }
+
+  @media print {
+    body { background: white; }
+    .wrap { padding: 0; }
+    .toolbar, .intro, .doc-head { display: none; }
+    .page { border: none; padding: 0; margin: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="doc-head">
+    <h1>KalkuPorte · Energieschema-Vorschau v2</h1>
+    <div class="meta">Originalformen aus PPTX · Längen pro Leitung</div>
+  </div>
+
+  <div class="intro">
+    <h2>v2 — was sich geändert hat</h2>
+    <p>✓ <b>Originalformen</b> aus deiner PowerPoint übernommen: Mast und Ladesäule als PNG (1:1 die Symbole, die du verwendest).</p>
+    <p>✓ <b>Längen pro Leitung</b> jetzt unter jeder Querschnitt-Beschriftung — werden aus <code>computeChainSegments()</code> + <code>segments[].len</code> berechnet, separat für jede einzelne Versorgungsleitung.</p>
+    <p>✓ <b>Original-Farben</b> übernommen: Leitung <code>#00B0F0</code>, Anschluss <code>#FF0000</code>, Schema-Titel <code>#FFC000</code>, KVS-Box <code>#CCCBCA</code>. Schriftart fällt auf Helvetica zurück (EON Brix Sans ist nicht web-frei verfügbar — beim PPTX-Import wird die Original-Schrift wieder gesetzt).</p>
+  </div>
+
+  <div class="toolbar">
+    <button class="primary" onclick="window.print()">📄 Drucken / als PDF</button>
+    <button onclick="downloadSvg('svg-1','Energieschema_Schwarzer-Weg.svg')">⬇ SVG herunterladen</button>
+  </div>
+
+  <section class="page">
+    <div class="page-head">
+      <div class="section-num">4. Energie- und Netzwerkschema:</div>
+      <div class="schema-title">Energieschema <em>Parkplatz Schwarzer Weg</em></div>
+    </div>
+
+    <svg id="svg-1" class="schema" viewBox="0 0 1400 720" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+      <defs>
+        <symbol id="earth" viewBox="0 0 30 30">
+          <line x1="15" y1="2" x2="15" y2="14" stroke="#1a1a1a" stroke-width="2"/>
+          <line x1="3" y1="14" x2="27" y2="14" stroke="#1a1a1a" stroke-width="2"/>
+          <line x1="7" y1="19" x2="23" y2="19" stroke="#1a1a1a" stroke-width="2"/>
+          <line x1="11" y1="24" x2="19" y2="24" stroke="#1a1a1a" stroke-width="2"/>
+        </symbol>
+      </defs>
+
+      <!-- Mast (Originalbild aus PPTX) -->
+      <image href="assets/mast.png" x="80" y="310" width="151" height="194"/>
+      <text x="155" y="295" text-anchor="middle" font-size="13" fill="#1a1a1a">Netzanschluss</text>
+      <text x="155" y="312" text-anchor="middle" font-size="12" font-style="italic" fill="#FFC000">Aus neuer MS-Station</text>
+      <text x="155" y="525" text-anchor="middle" font-size="13" fill="#FF0000">Anschluss Mittelspannung</text>
+
+      <!-- KVS Box -->
+      <rect x="740" y="338" width="100" height="64" rx="6" fill="#CCCBCA" stroke="none"/>
+      <text x="790" y="365" text-anchor="middle" font-size="12" fill="#FFFFFF">KVS</text>
+      <text x="790" y="386" text-anchor="middle" font-size="12" fill="#FFFFFF">400 A</text>
+
+      <!-- Mast → KVS -->
+      <line x1="231" y1="370" x2="740" y2="370" stroke="#00B0F0" stroke-width="2"/>
+      <text x="500" y="358" text-anchor="middle" font-size="12" fill="#1a1a1a">2 × NAYY-J 5 × 240 mm²</text>
+      <text x="500" y="396" text-anchor="middle" font-size="12" fill="#1a1a1a">130 m</text>
+
+      <!-- Ladesäulen + Längen je Leitung -->
+      <!-- LN2/1 -->
+      <image href="assets/charger.png" x="1180" y="105" width="66" height="66"/>
+      <text x="1260" y="130" font-size="12" fill="#1a1a1a">LN2/1</text>
+      <text x="1260" y="148" font-size="12" fill="#1a1a1a">2 × 22 kW</text>
+      <polyline points="790,338 790,145 1180,145" fill="none" stroke="#00B0F0" stroke-width="2"/>
+      <text x="985" y="135" text-anchor="middle" font-size="12" fill="#1a1a1a">5 × 16 mm²</text>
+      <text x="985" y="160" text-anchor="middle" font-size="11" fill="#555">42 m</text>
+
+      <!-- LN2/2 -->
+      <image href="assets/charger.png" x="1180" y="225" width="66" height="66"/>
+      <text x="1260" y="250" font-size="12" fill="#1a1a1a">LN2/2</text>
+      <text x="1260" y="268" font-size="12" fill="#1a1a1a">2 × 22 kW</text>
+      <polyline points="800,338 800,265 1180,265" fill="none" stroke="#00B0F0" stroke-width="2"/>
+      <text x="990" y="255" text-anchor="middle" font-size="12" fill="#1a1a1a">5 × 16 mm²</text>
+      <text x="990" y="280" text-anchor="middle" font-size="11" fill="#555">28 m</text>
+
+      <!-- LN2/3 -->
+      <image href="assets/charger.png" x="1180" y="345" width="66" height="66"/>
+      <text x="1260" y="370" font-size="12" fill="#1a1a1a">LN2/3</text>
+      <text x="1260" y="388" font-size="12" fill="#1a1a1a">2 × 22 kW</text>
+      <polyline points="840,370 1010,370 1010,385 1180,385" fill="none" stroke="#00B0F0" stroke-width="2"/>
+      <text x="1010" y="358" text-anchor="middle" font-size="12" fill="#1a1a1a">5 × 16 mm²</text>
+      <text x="1010" y="408" text-anchor="middle" font-size="11" fill="#555">21 m</text>
+
+      <!-- LN2/4 -->
+      <image href="assets/charger.png" x="1180" y="465" width="66" height="66"/>
+      <text x="1260" y="490" font-size="12" fill="#1a1a1a">LN2/4</text>
+      <text x="1260" y="508" font-size="12" fill="#1a1a1a">2 × 22 kW</text>
+      <polyline points="800,402 800,505 1180,505" fill="none" stroke="#00B0F0" stroke-width="2"/>
+      <text x="990" y="495" text-anchor="middle" font-size="12" fill="#1a1a1a">5 × 16 mm²</text>
+      <text x="990" y="520" text-anchor="middle" font-size="11" fill="#555">35 m</text>
+
+      <!-- LN2/5 -->
+      <image href="assets/charger.png" x="1180" y="585" width="66" height="66"/>
+      <text x="1260" y="610" font-size="12" fill="#1a1a1a">LN2/5</text>
+      <text x="1260" y="628" font-size="12" fill="#1a1a1a">2 × 22 kW</text>
+      <polyline points="790,402 790,625 1180,625" fill="none" stroke="#00B0F0" stroke-width="2"/>
+      <text x="985" y="615" text-anchor="middle" font-size="12" fill="#1a1a1a">5 × 16 mm²</text>
+      <text x="985" y="640" text-anchor="middle" font-size="11" fill="#555">48 m</text>
+
+      <use href="#earth" x="1340" y="660" width="22" height="22"/>
+    </svg>
+
+    <div class="note">
+      <b>Längen pro Leitung</b> kommen aus dem State: für jede <code>supply</code> wird
+      <code>computeChainSegments()</code> aufgerufen → Summe der <code>segments[].len</code> entlang
+      der gewählten Trassen-Kette → ergibt die Meterzahl unter dem Querschnitt-Label.
+    </div>
+  </section>
+
+  <div class="intro">
+    <h2>Zum Bearbeiten in PowerPoint</h2>
+    <p>Die SVG enthält die zwei PNG-Symbole eingebettet. Beim Einfügen in PowerPoint:</p>
+    <p>1. SVG-Datei per Drag&amp;Drop in die Folie ziehen<br>
+       2. Rechtsklick → <b>„Grafik konvertieren"</b><br>
+       3. Alle Linien, Texte, Boxen werden zu nativen PowerPoint-Formen — Mast/Ladesäule bleiben als Bild erhalten (so wie in deiner Original-PPTX).</p>
+    <p><b>Empfehlung für noch saubereren PPT-Workflow:</b> Wenn du häufig in PowerPoint nacharbeitest, kann ich auch direkt eine <code>.pptx</code> generieren — dann bleiben Mast/Ladesäule als <i>verlinkte Bilder</i>, alle Linien sind native Verbinder, und Texte sind in EON Brix Sans gesetzt. Sag Bescheid.</p>
+  </div>
+</div>
+
+<script>
+  async function downloadSvg(id, filename){
+    const svg = document.getElementById(id);
+    const clone = svg.cloneNode(true);
+    // Embed PNG images as base64 data URIs so the SVG is self-contained
+    const imgs = clone.querySelectorAll('image');
+    for (const im of imgs){
+      const href = im.getAttribute('href') || im.getAttribute('xlink:href');
+      if (!href || href.startsWith('data:')) continue;
+      try {
+        const resp = await fetch(href);
+        const blob = await resp.blob();
+        const dataUrl = await new Promise(res => {
+          const r = new FileReader();
+          r.onload = () => res(r.result);
+          r.readAsDataURL(blob);
+        });
+        im.setAttribute('href', dataUrl);
+        im.removeAttribute('xlink:href');
+      } catch(e){ console.warn('embed failed', href, e); }
+    }
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+    const blob = new Blob([new XMLSerializer().serializeToString(clone)], {type: 'image/svg+xml'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+</script>
+
+</body>
+</html>
