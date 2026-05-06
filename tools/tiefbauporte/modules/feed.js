@@ -1,0 +1,422 @@
+// Cable-Feed-Workflow: vom Verbraucher (oder Schrank) aus eine Quelle versorgen,
+// optional über eine KETTE von Trassen. Schreibt in object.supplies[].
+import { state, pushUndo, uid } from './state.js';
+import { addSupply, applySupplyToTraces, suggestTraceChain, removeSupply } from './links.js';
+
+let feedMode = null; // { consumerId, editingSupplyId? }
+
+export function isFeedActive(){ return !!feedMode; }
+export function getFeedConsumerId(){ return feedMode?.consumerId || null; }
+
+export function startFeed(ctx, consumerId, editingSupplyId = null){
+  const consumer = state.objects.find(o => o.id === consumerId);
+  if (!consumer) return;
+  feedMode = { consumerId, editingSupplyId };
+  document.body.classList.add('feed-mode');
+  showFeedHint(ctx, '🔌 Quelle wählen: Klicke auf einen Schrank / HAK / Trafo / weiteren Schrank zum Versorgen');
+  ctx.showToast('Quelle für Einspeisung auf der Karte wählen', 'ok');
+}
+
+export function cancelFeed(ctx){
+  if (!feedMode) return;
+  feedMode = null;
+  document.body.classList.remove('feed-mode');
+  hideFeedHint();
+}
+
+export function handleFeedPick(ctx, pickedAssetId){
+  if (!feedMode) return false;
+  if (pickedAssetId === feedMode.consumerId){
+    ctx.showToast('Quelle und Verbraucher müssen unterschiedlich sein', 'err');
+    return true;
+  }
+  const consumer = state.objects.find(o => o.id === feedMode.consumerId);
+  const source   = state.objects.find(o => o.id === pickedAssetId);
+  if (!consumer || !source){ cancelFeed(ctx); return true; }
+  const consumerCat = state.catalog.find(c => c.id === consumer.catId);
+  const sourceCat   = state.catalog.find(c => c.id === source.catId);
+  if (!sourceCat?.supply){
+    ctx.showToast(`"${sourceCat?.name||'?'}" ist keine Speisequelle`, 'err');
+    return true;
+  }
+  openFeedDialog(ctx, consumer, source, consumerCat, sourceCat, feedMode.editingSupplyId);
+  return true;
+}
+
+function openFeedDialog(ctx, consumer, source, consumerCat, sourceCat, editingSupplyId){
+  const editing = editingSupplyId ? (consumer.supplies||[]).find(s => s.id === editingSupplyId) : null;
+  const suggestedChain = editing?.traceIds?.length ? editing.traceIds : suggestTraceChain(source, consumer);
+
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `
+    <div class="modal-backdrop" id="mFB">
+      <div class="modal" style="max-width:560px">
+        <header><h3>🔌 Kabel-Einspeisung ${editing?'(bearbeiten)':''}</h3><button class="close" data-act="x">×</button></header>
+        <div class="body">
+          <div style="background:var(--bg-2);padding:10px;border-radius:6px;font-size:12px;line-height:1.6;margin-bottom:12px">
+            <div><b style="color:var(--navy)">${sourceCat.icon} ${escapeHtml(source.customName || sourceCat.name)}</b> <span style="color:var(--ink-3)">(Quelle)</span></div>
+            <div style="color:var(--ink-3);font-size:11px;margin:2px 0">⬇ versorgt über Trassen-Kette ⬇</div>
+            <div><b style="color:var(--navy)">${consumerCat.icon} ${escapeHtml(consumer.customName || consumerCat.name)}</b> <span style="color:var(--ink-3)">(Verbraucher)</span></div>
+          </div>
+
+          <label style="display:block;font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:4px">Trassen-Kette (Reihenfolge: Quelle → Verbraucher)</label>
+          <div id="fdChain" style="display:flex;flex-direction:column;gap:4px;margin-bottom:6px"></div>
+          <select id="fdAddTrace" style="width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:4px;font-size:12px">
+            <option value="">+ Trasse hinzufügen…</option>
+          </select>
+          <div style="font-size:10px;color:var(--ink-3);margin-top:4px;line-height:1.4">
+            💡 Mehrere Trassen verketten, wenn die Verbindung über mehrere Trassen-Abschnitte läuft (z.B. MWS → KVS → Wallbox).
+          </div>
+
+          <label style="display:block;font-size:10px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin:14px 0 4px">Kabeltyp</label>
+          <select id="fdCableSel" style="width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:4px;font-size:12px;background:#fff"></select>
+          <div id="fdCablePreview" style="margin-top:6px;display:flex;align-items:center;gap:8px;font-size:12px;padding:6px 8px;background:#fafafa;border:1px solid var(--line);border-radius:4px"></div>
+
+          <div style="display:flex;align-items:center;gap:10px;margin-top:14px;font-size:12px;color:var(--ink);font-weight:600">
+            <label style="display:flex;align-items:center;gap:4px">Anzahl
+              <input type="number" id="fdCount" value="${editing?.count ?? 1}" min="1" step="1" style="width:60px;padding:4px;border:1px solid var(--line);border-radius:4px">
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;margin-left:auto">Reserve:
+              <input type="number" id="fdReserve" value="${editing?.reserveValue ?? 10}" min="0" step="0.5" style="width:70px;padding:4px;border:1px solid var(--line);border-radius:4px">
+              <select id="fdReserveMode" style="padding:4px;border:1px solid var(--line);border-radius:4px">
+                <option value="pct" ${editing?.reserveMode!=='m'?'selected':''}>%</option>
+                <option value="m" ${editing?.reserveMode==='m'?'selected':''}>m</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="foot">
+          <button data-act="x">Abbruch</button>
+          <button class="primary" id="fdConfirm">✓ ${editing?'Aktualisieren':'Einspeisen'}</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Chain rendering
+  const chainEl = document.getElementById('fdChain');
+  const addTraceSel = document.getElementById('fdAddTrace');
+  let chain = [...(suggestedChain || [])];
+
+  function renderChain(){
+    chainEl.innerHTML = chain.length
+      ? chain.map((tid, i) => {
+          const t = state.traces.find(x => x.id === tid);
+          if (!t) return '';
+          const idx = state.traces.indexOf(t);
+          const len = t.segments.reduce((s,sg)=>s+sg.len,0);
+          const name = t.name?.trim() || `Trasse ${idx+1}`;
+          return `<div style="display:flex;align-items:center;gap:6px;background:#eef0fa;border:1px solid var(--navy);border-radius:5px;padding:6px 8px;font-size:12px">
+            <span style="color:var(--ink-3);font-weight:700;width:18px">${i+1}.</span>
+            <b style="flex:1;color:var(--navy)">${escapeHtml(name)}</b>
+            <span style="color:var(--ink-3)">${len.toFixed(1)} m</span>
+            <button data-rm="${i}" style="background:#fff;border:1px solid var(--line);border-radius:3px;width:22px;height:22px;cursor:pointer;font-size:14px;line-height:1">×</button>
+          </div>`;
+        }).join('')
+      : `<div style="color:var(--ink-3);font-style:italic;font-size:11px;padding:6px">Keine Trasse — bitte mind. eine hinzufügen oder als reine Logik-Verknüpfung speichern.</div>`;
+    chainEl.querySelectorAll('[data-rm]').forEach(b => {
+      b.onclick = () => { chain.splice(Number(b.dataset.rm), 1); renderChain(); renderAddOptions(); };
+    });
+  }
+
+  function renderAddOptions(){
+    const remaining = state.traces.filter(t => !chain.includes(t.id));
+    addTraceSel.innerHTML = '<option value="">+ Trasse hinzufügen…</option>' + remaining.map(t => {
+      const idx = state.traces.indexOf(t);
+      const len = t.segments.reduce((s,sg)=>s+sg.len,0);
+      const name = t.name?.trim() || `Trasse ${idx+1}`;
+      return `<option value="${t.id}">${escapeHtml(name)} · ${len.toFixed(1)} m</option>`;
+    }).join('');
+  }
+  addTraceSel.onchange = (e) => {
+    const tid = e.target.value;
+    if (tid && !chain.includes(tid)){ chain.push(tid); renderChain(); renderAddOptions(); }
+    e.target.value = '';
+  };
+
+  renderChain();
+  renderAddOptions();
+
+  // Cable list — gruppiertes Select wie im Auto-Einspeisen-Dialog
+  const sel = document.getElementById('fdCableSel');
+  const preview = document.getElementById('fdCablePreview');
+  let pickedCableId = editing?.cableTypeId || state.cableTypes[0]?.id;
+  const groupsOrder = [
+    { id:'data', label:'Datenleitungen' },
+    { id:'pipe', label:'Leerrohre' },
+    { id:'power_cu', label:'Stromkabel Kupfer' },
+    { id:'power_al', label:'Stromkabel Aluminium' },
+    { id:'earth', label:'Erdung' },
+    { id:'_other', label:'Weitere' },
+  ];
+  function renderCableSelect(){
+    const byGroup = new Map();
+    state.cableTypes.forEach(c => {
+      const g = c.group || '_other';
+      if (!byGroup.has(g)) byGroup.set(g, []);
+      byGroup.get(g).push(c);
+    });
+    sel.innerHTML = groupsOrder.filter(g => byGroup.has(g.id)).map(g => `
+      <optgroup label="${escapeHtml(g.label)}">
+        ${byGroup.get(g.id).map(c => `
+          <option value="${c.id}" ${c.id===pickedCableId?'selected':''}>${escapeHtml(c.label)} – ${c.price.toFixed(2)} €/m${c.lvPos?` (LV ${c.lvPos})`:''}</option>
+        `).join('')}
+      </optgroup>
+    `).join('');
+    renderPreview();
+  }
+  function renderPreview(){
+    const ct = state.cableTypes.find(c => c.id === pickedCableId);
+    if (!ct){ preview.innerHTML = ''; return; }
+    preview.innerHTML = `
+      <div style="width:14px;height:14px;border-radius:3px;background:${ct.color};flex-shrink:0"></div>
+      <div style="flex:1"><b>${escapeHtml(ct.label)}</b>${ct.lvPos?` <span style="color:var(--ink-3);font-size:10px">LV ${ct.lvPos}</span>`:''}</div>
+      <div style="color:var(--navy);font-weight:700">${ct.price.toFixed(2)} €/m</div>
+    `;
+  }
+  sel.onchange = () => { pickedCableId = sel.value; renderPreview(); };
+  renderCableSelect();
+
+  const close = () => { root.innerHTML = ''; cancelFeed(ctx); };
+  root.querySelector('#mFB').onclick = (e) => {
+    if (e.target.id === 'mFB' || e.target.dataset.act === 'x') close();
+  };
+
+  document.getElementById('fdConfirm').onclick = () => {
+    pushUndo();
+    const reserveValue = Math.max(0, Number(document.getElementById('fdReserve').value)||0);
+    const reserveMode  = document.getElementById('fdReserveMode').value === 'm' ? 'm' : 'pct';
+    const count = Math.max(1, Number(document.getElementById('fdCount').value)||1);
+
+    let supply;
+    if (editing){
+      supply = editing;
+      supply.sourceId = source.id;
+      supply.traceIds = [...chain];
+      supply.cableTypeId = pickedCableId;
+      supply.count = count;
+      supply.reserveValue = reserveValue;
+      supply.reserveMode = reserveMode;
+    } else {
+      supply = addSupply(consumer, {
+        sourceId: source.id,
+        traceIds: [...chain],
+        cableTypeId: pickedCableId,
+        count, reserveValue, reserveMode,
+      });
+    }
+
+    // Spiegelfelder fuer Rueckwaertskompat
+    consumer.supplyFromId = source.id;
+    consumer.supplyCable = chain.length > 0;
+    if (chain.length === 1) consumer.linkedTraceId = chain[0];
+
+    applySupplyToTraces(supply, source, consumer);
+
+    cancelFeed(ctx);
+    root.innerHTML = '';
+    ctx.refresh(); ctx.save();
+    ctx.selectObject(consumer.id);
+    ctx.showToast(`🔌 ${state.cableTypes.find(c=>c.id===pickedCableId)?.label||'Kabel'} ${editing?'aktualisiert':'eingespeist'} (${chain.length} Trasse${chain.length!==1?'n':''})`, 'ok');
+  };
+}
+
+let hintEl = null;
+function showFeedHint(ctx, text){
+  hideFeedHint();
+  hintEl = document.createElement('div');
+  hintEl.className = 'feed-hint-banner';
+  hintEl.innerHTML = `<span>${text}</span><button id="feedCancel">Abbrechen (Esc)</button>`;
+  document.getElementById('map').appendChild(hintEl);
+  document.getElementById('feedCancel').onclick = () => cancelFeed(ctx);
+  const onKey = (e) => { if (e.key === 'Escape'){ cancelFeed(ctx); document.removeEventListener('keydown', onKey); } };
+  document.addEventListener('keydown', onKey);
+}
+function hideFeedHint(){
+  if (hintEl){ hintEl.remove(); hintEl = null; }
+}
+
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ============================================================
+// AUTO-EINSPEISUNG: Power-Schrank + NWS + Erdung in einem Schritt
+// ============================================================
+
+export function openAutoFeedDialog(ctx, consumerId){
+  const consumer = state.objects.find(o => o.id === consumerId);
+  if (!consumer) return;
+  const consumerCat = state.catalog.find(c => c.id === consumer.catId);
+
+  // Verfügbare Quellen
+  const powerSources = state.objects.filter(o => {
+    if (o.id === consumer.id) return false;
+    const c = state.catalog.find(x => x.id === o.catId);
+    return c && c.supply && c.id !== 'nws';
+  });
+  const nwsSources = state.objects.filter(o => {
+    const c = state.catalog.find(x => x.id === o.catId);
+    return c && c.id === 'nws';
+  });
+  // Stromkabel: nach Cu/Al gruppieren
+  const powerCables = state.cableTypes.filter(c => {
+    if (c.group === 'power_cu' || c.group === 'power_al') return true;
+    return ['k1','k2','k3','k4'].includes(c.id) || (String(c.label||'').toLowerCase().includes('strom'));
+  });
+  const powerCu = powerCables.filter(c => c.group === 'power_cu' || (!c.group && ['k1','k2','k3','k4'].includes(c.id)));
+  const powerAl = powerCables.filter(c => c.group === 'power_al');
+  const dataCable = state.cableTypes.find(c => c.id === 'd');
+  const pipeCable = state.cableTypes.find(c => c.id === 'l');
+  const earthCables = state.cableTypes.filter(c => c.id === 'fb' || c.id === 're');
+
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `
+    <div class="modal-backdrop" id="mAF">
+      <div class="modal" style="max-width:580px">
+        <header><h3>⚡ Automatisch Einspeisen</h3><button class="close" data-act="x">×</button></header>
+        <div class="body">
+          <div style="background:var(--bg-2);padding:10px;border-radius:6px;font-size:12px;margin-bottom:14px">
+            <b>${consumerCat?.icon||''} ${escapeHtml(consumer.customName || (consumerCat?.icon||'')+'/'+(consumer.seqNo||'') )}</b>
+            <span style="color:var(--ink-3)"> – wird automatisch versorgt</span>
+          </div>
+
+          <label style="display:block;font-size:10px;color:var(--ink-3);text-transform:uppercase;font-weight:600;margin:0 0 4px">⚡ Power-Quelle (KVS / MWS / ZAS / HAK)</label>
+          <select id="afSrc" style="width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:4px;font-size:12px;margin-bottom:10px">
+            <option value="">— bitte wählen —</option>
+            ${powerSources.map(o => {
+              const c = state.catalog.find(x => x.id === o.catId);
+              return `<option value="${o.id}">${c?.icon||'?'} ${escapeHtml(o.customName||c?.name||'?')}${o.seqNo?'/'+o.seqNo:''}</option>`;
+            }).join('')}
+          </select>
+
+          <label style="display:block;font-size:10px;color:var(--ink-3);text-transform:uppercase;font-weight:600;margin:0 0 4px">Power-Kabeltyp</label>
+          <select id="afCable" style="width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:4px;font-size:12px;margin-bottom:10px">
+            ${powerCu.length ? `<optgroup label="Kupfer">${powerCu.map(c => `<option value="${c.id}">${escapeHtml(c.label)} – ${c.price.toFixed(2)} €/m</option>`).join('')}</optgroup>` : ''}
+            ${powerAl.length ? `<optgroup label="Aluminium">${powerAl.map(c => `<option value="${c.id}">${escapeHtml(c.label)} – ${c.price.toFixed(2)} €/m</option>`).join('')}</optgroup>` : ''}
+            ${(!powerCu.length && !powerAl.length) ? powerCables.map(c => `<option value="${c.id}">${escapeHtml(c.label)} – ${c.price.toFixed(2)} €/m</option>`).join('') : ''}
+          </select>
+
+          <label style="display:block;font-size:10px;color:var(--ink-3);text-transform:uppercase;font-weight:600;margin:0 0 4px">🌐 NWS (Daten + Leerrohr) <span style="text-transform:none;color:var(--ink-3)">– optional</span></label>
+          <select id="afNws" style="width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:4px;font-size:12px;margin-bottom:10px">
+            <option value="">— ohne Daten/Leerrohr —</option>
+            ${nwsSources.map(o => {
+              const c = state.catalog.find(x => x.id === o.catId);
+              return `<option value="${o.id}">${c?.icon||'?'} ${escapeHtml(o.customName||c?.name||'?')}${o.seqNo?'/'+o.seqNo:''}</option>`;
+            }).join('')}
+          </select>
+
+          <hr style="border:none;border-top:1px solid var(--line);margin:14px 0">
+
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer">
+            <input type="checkbox" id="afEarth"> ⚓ Erdung abzweigen
+          </label>
+          <div id="afEarthOpts" style="margin-left:22px;margin-top:6px;display:none">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:4px">
+              <label>Typ:
+                <select id="afEarthType" style="padding:4px;border:1px solid var(--line);border-radius:4px;margin-left:4px">
+                  ${earthCables.map(c => `<option value="${c.id}">${escapeHtml(c.label)}</option>`).join('')}
+                </select>
+              </label>
+              <label>Länge:
+                <input type="number" id="afEarthLen" value="3" min="0.5" step="0.5" style="width:60px;padding:4px;border:1px solid var(--line);border-radius:4px;margin-left:4px"> m
+              </label>
+            </div>
+            <div style="font-size:10px;color:var(--ink-3)">+ 1× Kreuzverbinder V4A wird automatisch zur Materialliste hinzugefügt</div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:10px;margin-top:14px;font-size:12px">
+            <label>Reserve:
+              <input type="number" id="afReserve" value="10" min="0" step="0.5" style="width:60px;padding:4px;border:1px solid var(--line);border-radius:4px;margin-left:4px">
+              <select id="afReserveMode" style="padding:4px;border:1px solid var(--line);border-radius:4px">
+                <option value="pct" selected>%</option>
+                <option value="m">m</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="foot">
+          <button data-act="x">Abbruch</button>
+          <button class="primary" id="afConfirm">⚡ Auto-Einspeisen</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const close = () => { root.innerHTML = ''; };
+  root.querySelector('#mAF').onclick = (e) => {
+    if (e.target.id === 'mAF' || e.target.dataset.act === 'x') close();
+  };
+  document.getElementById('afEarth').onchange = (e) => {
+    document.getElementById('afEarthOpts').style.display = e.target.checked ? 'block' : 'none';
+  };
+
+  document.getElementById('afConfirm').onclick = () => {
+    const srcId = document.getElementById('afSrc').value;
+    const cableId = document.getElementById('afCable').value;
+    const nwsId = document.getElementById('afNws').value;
+    const reserveValue = Math.max(0, Number(document.getElementById('afReserve').value)||0);
+    const reserveMode  = document.getElementById('afReserveMode').value === 'm' ? 'm' : 'pct';
+    const earthOn = document.getElementById('afEarth').checked;
+    const earthTypeId = document.getElementById('afEarthType')?.value;
+    const earthLen = Math.max(0, Number(document.getElementById('afEarthLen')?.value)||3);
+
+    if (!srcId){ alert('Bitte eine Power-Quelle wählen.'); return; }
+    if (!cableId){ alert('Bitte einen Power-Kabeltyp wählen.'); return; }
+
+    pushUndo();
+
+    const source = state.objects.find(o => o.id === srcId);
+    const nws = nwsId ? state.objects.find(o => o.id === nwsId) : null;
+
+    // 1) Power-Supply
+    const powerChain = suggestTraceChain(source, consumer);
+    const powerSupply = addSupply(consumer, {
+      sourceId: source.id,
+      traceIds: [...powerChain],
+      cableTypeId: cableId,
+      count: 1, reserveValue, reserveMode,
+    });
+    applySupplyToTraces(powerSupply, source, consumer);
+    consumer.supplyFromId = source.id;
+    consumer.supplyCable = powerChain.length > 0;
+    if (powerChain.length === 1) consumer.linkedTraceId = powerChain[0];
+
+    // 2) NWS-Daten + Leerrohr (optional)
+    if (nws && dataCable){
+      const nwsChain = suggestTraceChain(nws, consumer);
+      const dataSupply = addSupply(consumer, {
+        sourceId: nws.id, traceIds: [...nwsChain], cableTypeId: dataCable.id,
+        count: 1, reserveValue, reserveMode,
+      });
+      applySupplyToTraces(dataSupply, nws, consumer);
+    }
+    if (nws && pipeCable){
+      const nwsChain = suggestTraceChain(nws, consumer);
+      const pipeSupply = addSupply(consumer, {
+        sourceId: nws.id, traceIds: [...nwsChain], cableTypeId: pipeCable.id,
+        count: 1, reserveValue, reserveMode,
+      });
+      applySupplyToTraces(pipeSupply, nws, consumer);
+    }
+
+    // 3) Erdung (als Asset-Eigenschaft, taucht in BOM auf)
+    if (earthOn && earthTypeId){
+      consumer.earth = {
+        cableTypeId: earthTypeId,
+        length: earthLen,
+        crossConnector: 1, // 1× Kreuzverbinder V4A
+      };
+    } else {
+      delete consumer.earth;
+    }
+
+    root.innerHTML = '';
+    ctx.refresh(); ctx.save();
+    ctx.selectObject(consumer.id);
+    const parts = ['⚡ Power'];
+    if (nws) parts.push('🌐 Daten + Leerrohr');
+    if (earthOn) parts.push('⚓ Erdung');
+    ctx.showToast('✓ Auto-eingespeist: ' + parts.join(' · '), 'ok');
+  };
+}
